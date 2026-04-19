@@ -32,14 +32,28 @@ A single-page web application for real-time monitoring and control of two water 
 
 ## Implementation Steps
 
-### Phase 1 — Project Setup
-- [ ] Initialize React + Vite project
-- [ ] Install and configure Bootstrap + FontAwesome
-- [ ] Set up environment variables (`VITE_API_BASE_URL`, `VITE_WS_URL`)
-- [ ] Set up folder structure (`/components`, `/hooks`, `/api`, `/types`)
+### Phase 1 — Project Setup ✅
+- [x] Initialize React + Vite project
+- [x] Install and configure Bootstrap + FontAwesome
+- [x] Set up environment variables (`VITE_API_BASE_URL`, `VITE_WS_URL`)
+- [x] Set up folder structure (`/components`, `/hooks`, `/api`, `/types`)
 - [ ] Configure ESLint + Prettier
 
-### Phase 2 — API Layer
+### Phase 2 — UI Components
+- [ ] `ReservoirGauge` — animated visual fill indicator with percentage label
+- [ ] `TransferControls` — source/destination selector, percentage slider, full-transfer button
+- [ ] `TransferProgress` — live progress bar shown during pump operation
+- [ ] `StatusBanner` — alerts for errors, warnings (overflow risk, sensor offline)
+- [ ] `Dashboard` — top-level layout combining all components
+
+### Phase 3 — Polish & UX
+- [ ] Responsive layout (usable on tablet for on-site control)
+- [ ] Loading skeletons for initial data fetch
+- [ ] Confirm dialog for full-transfer action
+- [ ] Disable controls while a transfer is in progress
+- [ ] Dark/light mode (optional)
+
+### Phase 4 — API Layer
 - [ ] Define TypeScript types for API responses (reservoir state, transfer status)
 - [ ] Create API client module (base URL, auth headers, error handling)
 - [ ] Implement endpoints:
@@ -48,29 +62,17 @@ A single-page web application for real-time monitoring and control of two water 
   - `GET /transfer/status` — poll or subscribe to active transfer state
 - [ ] Set up WebSocket connection for live sensor data
 
-### Phase 3 — UI Components
-- [ ] `ReservoirGauge` — animated visual fill indicator with percentage label
-- [ ] `TransferControls` — source/destination selector, percentage slider, full-transfer button
-- [ ] `TransferProgress` — live progress bar shown during pump operation
-- [ ] `StatusBanner` — alerts for errors, warnings (overflow risk, sensor offline)
-- [ ] `Dashboard` — top-level layout combining all components
-
-### Phase 4 — Real-Time Logic
+### Phase 5 — Real-Time Logic
 - [ ] WebSocket hook (`useReservoirLevels`) — subscribes and updates state on each message
 - [ ] Optimistic UI updates during transfer initiation
-- [ ] Disable controls while a transfer is in progress
 - [ ] Auto-reconnect logic for dropped WebSocket connections
 
-### Phase 5 — Edge Cases & Validation
+### Phase 6 — Edge Cases & Validation
 - [ ] Prevent transfer if source level is 0%
 - [ ] Prevent transfer if destination is at 100% (overflow guard)
 - [ ] Handle pump timeout / backend error response gracefully
-- [ ] Confirm dialog for full-transfer action
 
-### Phase 6 — Polish & Deployment
-- [ ] Responsive layout (usable on tablet for on-site control)
-- [ ] Loading skeletons for initial data fetch
-- [ ] Dark/light mode (optional)
+### Phase 7 — Deployment
 - [ ] Build and deploy (static host or Docker container)
 - [ ] Environment-specific config for dev vs. production API URLs
 

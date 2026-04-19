@@ -7,7 +7,9 @@
       "Bash(npm create *)",
       "Bash(cp -r rcp-temp/. reservoir-control-panel/)",
       "Bash(rm -rf rcp-temp)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)"
     ]
   }
 }
