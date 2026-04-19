@@ -39,12 +39,12 @@ A single-page web application for real-time monitoring and control of two water 
 - [x] Set up folder structure (`/components`, `/hooks`, `/api`, `/types`)
 - [ ] Configure ESLint + Prettier
 
-### Phase 2 — UI Components
-- [ ] `ReservoirGauge` — animated visual fill indicator with percentage label
-- [ ] `TransferControls` — source/destination selector, percentage slider, full-transfer button
-- [ ] `TransferProgress` — live progress bar shown during pump operation
-- [ ] `StatusBanner` — alerts for errors, warnings (overflow risk, sensor offline)
-- [ ] `Dashboard` — top-level layout combining all components
+### Phase 2 — UI Components 🚧 WIP
+- [x] `ReservoirGauge` — animated visual fill indicator with percentage label
+- [x] `TransferControls` — source/destination selector, percentage slider, full-transfer button
+- [x] `TransferProgress` — live progress bar shown during pump operation
+- [x] `StatusBanner` — alerts for errors, warnings (overflow risk, sensor offline)
+- [x] `Dashboard` — top-level layout combining all components
 
 ### Phase 3 — Polish & UX
 - [ ] Responsive layout (usable on tablet for on-site control)
