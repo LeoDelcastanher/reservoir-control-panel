@@ -5,9 +5,9 @@ import TransferProgress from './TransferProgress'
 import StatusBanner from './StatusBanner'
 import type { ReservoirId, ReservoirState, TransferState } from '../types'
 
-const MOCK_ALERTS = [
-  // { type: 'warning' as const, message: 'Reservoir B near full' },
-  // { type: 'danger' as const, message: 'Sensor A offline' },
+const MOCK_ALERTS: { type: 'warning' | 'danger' | 'info'; message: string }[] = [
+  // { type: 'warning', message: 'Reservoir B near full' },
+  // { type: 'danger', message: 'Sensor A offline' },
 ]
 
 export default function Dashboard() {
@@ -37,7 +37,6 @@ export default function Dashboard() {
         clearInterval(interval)
         setReservoirs(prev => {
           const src = prev.find(r => r.id === from)!
-          const dst = prev.find(r => r.id === to)!
           const moved = (src.level * percent) / 100
           return prev.map(r => {
             if (r.id === from) return { ...r, level: Math.max(0, Math.round(r.level - moved)) }
