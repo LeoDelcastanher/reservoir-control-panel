@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"C:/Projects/Dev/reservoir-control-panel\" init)",
+      "Bash(git -C \"C:/Projects/Dev/reservoir-control-panel\" add PLAN.md)",
+      "Bash(git -C \"C:/Projects/Dev/reservoir-control-panel\" commit -m \"Initial commit: add project plan\")",
+      "Bash(npm create *)",
+      "Bash(cp -r rcp-temp/. reservoir-control-panel/)",
+      "Bash(rm -rf rcp-temp)",
+      "Bash(npm install *)"
+    ]
+  }
+}
