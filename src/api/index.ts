@@ -10,7 +10,9 @@ const PATHS = {
 
 // ─── Response types ───────────────────────────────────────────────────────────
 export interface ReservoirResponse {
-  level_percent: number
+  id: number
+  name: string
+  volume: number // percentage 0–100
 }
 
 export interface StartTransferResponse {
