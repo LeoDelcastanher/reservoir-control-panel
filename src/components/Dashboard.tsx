@@ -3,10 +3,12 @@ import ReservoirGauge from './ReservoirGauge'
 import TransferControls from './TransferControls'
 import TransferProgress from './TransferProgress'
 import StatusBanner from './StatusBanner'
-import { getReservoirs, startTransfer, getTransferStatus } from '../api'
+import { getReservoirs, startTransfer } from '../api'
 import type { ReservoirId, ReservoirState, TransferState } from '../types'
 
 type Alert = { type: 'warning' | 'danger' | 'info'; message: string }
+
+const TRANSFER_RESET: TransferState = { status: 'idle', from: null, to: null, targetPercent: 0 }
 
 export default function Dashboard() {
   const [reservoirs, setReservoirs] = useState<ReservoirState[]>([
@@ -16,43 +18,34 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [alerts, setAlerts] = useState<Alert[]>([])
 
-  const [transfer, setTransfer] = useState<TransferState>({
-    status: 'idle',
-    from: null,
-    to: null,
-    targetPercent: 0,
-    progressPercent: 0,
-  })
+  const [transfer, setTransfer] = useState<TransferState>(TRANSFER_RESET)
 
-  function loadReservoirs() {
-    return getReservoirs().then(([a, b]) => {
-      setReservoirs([
-        { id: 'a', apiId: a.id, name: a.name, level: a.volume },
-        { id: 'b', apiId: b.id, name: b.name, level: b.volume },
-      ])
-    })
-  }
-
+  // Poll levels every 2s
   useEffect(() => {
-    loadReservoirs()
-      .catch(err => {
-        setAlerts([{ type: 'danger', message: err instanceof Error ? err.message : 'Failed to load reservoir data' }])
-      })
-      .finally(() => setLoading(false))
+    function poll() {
+      getReservoirs()
+        .then(data => {
+          setReservoirs([
+            { id: 'a', name: 'RESERVOIR A', level: data.resA },
+            { id: 'b', name: 'RESERVOIR B', level: data.resB },
+          ])
+          setLoading(false)
+        })
+        .catch(err => {
+          setAlerts([{ type: 'danger', message: err instanceof Error ? err.message : 'Failed to load reservoir data' }])
+          setLoading(false)
+        })
+    }
+    poll()
+    const id = setInterval(poll, 2000)
+    return () => clearInterval(id)
   }, [])
 
-  const TRANSFER_RESET: TransferState = { status: 'idle', from: null, to: null, targetPercent: 0, progressPercent: 0 }
-
   async function handleTransfer(from: ReservoirId, to: ReservoirId, percent: number) {
-    setTransfer({ status: 'in_progress', from, to, targetPercent: percent, progressPercent: 0 })
+    setTransfer({ status: 'in_progress', from, to, targetPercent: percent })
 
-    const fromApiId = reservoirs.find(r => r.id === from)!.apiId
-    const toApiId = reservoirs.find(r => r.id === to)!.apiId
-
-    let transferId: string
     try {
-      const res = await startTransfer(fromApiId, toApiId, percent)
-      transferId = res.transfer_id
+      await startTransfer(from, to, percent)
     } catch (err) {
       setTransfer(t => ({ ...t, status: 'failed' }))
       setAlerts(prev => [...prev, { type: 'danger', message: err instanceof Error ? err.message : 'Failed to start transfer' }])
@@ -60,20 +53,16 @@ export default function Dashboard() {
       return
     }
 
+    // Poll until both pumps stop — first confirm pump started to avoid false completion
+    let pumpStarted = false
     const interval = setInterval(() => {
-      getTransferStatus(transferId)
-        .then(res => {
-          setTransfer(t => ({ ...t, progressPercent: res.transferred_percent }))
-
-          if (res.status === 'complete') {
+      getReservoirs()
+        .then(data => {
+          const pumping = data.pumpA || data.pumpB
+          if (pumping) pumpStarted = true
+          if (pumpStarted && !pumping) {
             clearInterval(interval)
-            setTransfer(t => ({ ...t, status: 'complete', progressPercent: 100 }))
-            loadReservoirs().catch(() => {})
-            setTimeout(() => setTransfer(TRANSFER_RESET), 2000)
-          } else if (res.status === 'failed') {
-            clearInterval(interval)
-            setTransfer(t => ({ ...t, status: 'failed' }))
-            setAlerts(prev => [...prev, { type: 'danger', message: 'Transfer failed' }])
+            setTransfer(t => ({ ...t, status: 'complete' }))
             setTimeout(() => setTransfer(TRANSFER_RESET), 2000)
           }
         })
@@ -93,8 +82,8 @@ export default function Dashboard() {
     setTestState('loading')
     setTestResult('')
     try {
-      const [a, b] = await getReservoirs()
-      setTestResult(JSON.stringify({ a, b }))
+      const data = await getReservoirs()
+      setTestResult(JSON.stringify(data))
       setTestState('ok')
     } catch (err) {
       setTestResult(err instanceof Error ? err.message : String(err))

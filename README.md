@@ -19,24 +19,26 @@ VITE_API_HOST=192.168.68.115:1880
 
 ## API Contract — v1
 
-### `GET /reservoir-volume/:id`
+### `GET /reservoirs`
 
-Returns the current state of a single reservoir. `:id` is `a` or `b`.
+Returns current volume and pump state for both reservoirs. Polled every 2s for live level updates. Also polled every 500ms during a transfer to detect pump completion.
 
 **Response**
 ```json
 {
-  "id": 1,
-  "name": "Reservoir A",
-  "volume": 72
+  "resA": 72,
+  "resB": 35,
+  "pumpA": false,
+  "pumpB": false
 }
 ```
 
-| Field    | Type   | Description                          |
-|----------|--------|--------------------------------------|
-| `id`     | Int    | Unique identifier of the reservoir   |
-| `name`   | String | Display name of the reservoir        |
-| `volume` | Int    | Current fill level, percentage 0–100 |
+| Field   | Type    | Description                              |
+|---------|---------|------------------------------------------|
+| `resA`  | Int     | Reservoir A fill level, percentage 0–100 |
+| `resB`  | Int     | Reservoir B fill level, percentage 0–100 |
+| `pumpA` | Boolean | Whether pump A is currently running      |
+| `pumpB` | Boolean | Whether pump B is currently running      |
 
 ---
 
@@ -47,50 +49,8 @@ Initiates a water transfer between reservoirs.
 **Request body**
 ```json
 {
-  "from": 1,
-  "to": 2,
+  "from": "a",
+  "to": "b",
   "amount_percent": 30
-}
-```
-
-**Response**
-```json
-{
-  "transfer_id": "abc123",
-  "status": "started"
-}
-```
-
----
-
-### `GET /transfer/:id/status`
-
-Polls the status of an active transfer.
-
-**Response**
-```json
-{
-  "status": "in_progress",
-  "transferred_percent": 45
-}
-```
-
-| `status` value  | Meaning                        |
-|-----------------|--------------------------------|
-| `in_progress`   | Pump is running                |
-| `complete`      | Transfer finished successfully |
-| `failed`        | Pump error or timeout          |
-
----
-
-### `WS /ws/reservoirs`
-
-WebSocket stream. Emits on every sensor tick while idle.
-
-**Message**
-```json
-{
-  "a": 72,
-  "b": 35
 }
 ```

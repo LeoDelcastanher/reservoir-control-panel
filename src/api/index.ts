@@ -1,39 +1,22 @@
-import type { ReservoirId, TransferStatus } from '../types'
+import type { ReservoirId } from '../types'
 
 // ─── Paths ────────────────────────────────────────────────────────────────────
 const PATHS = {
-  reservoir:      (id: ReservoirId) => `/reservoir-volume/${id}`,
-  transfer:       '/transfer',
-  transferStatus: (id: string) => `/transfer/${id}/status`,
-  wsReservoirs:   '/ws/reservoirs',
+  reservoirs: '/reservoirs',
+  transfer:   '/transfer',
 }
 
 // ─── Response types ───────────────────────────────────────────────────────────
-export interface ReservoirResponse {
-  id: number
-  name: string
-  volume: number // percentage 0–100
-}
-
-export interface StartTransferResponse {
-  transfer_id: string
-  status: 'started'
-}
-
-export interface TransferStatusResponse {
-  status: TransferStatus
-  transferred_percent: number
-}
-
-export interface ReservoirStreamMessage {
-  a: number
-  b: number
+export interface ReservoirsResponse {
+  resA: number
+  resB: number
+  pumpA: boolean
+  pumpB: boolean
 }
 
 // ─── Base client ──────────────────────────────────────────────────────────────
 const HOST = import.meta.env.VITE_API_HOST as string
 const BASE = `http://${HOST}`
-const WS_BASE = `ws://${HOST}`
 
 export class ApiError extends Error {
   status: number
@@ -54,42 +37,17 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 // ─── REST endpoints ───────────────────────────────────────────────────────────
-export function getReservoir(id: ReservoirId): Promise<ReservoirResponse> {
-  return request<ReservoirResponse>(PATHS.reservoir(id))
-}
-
-export function getReservoirs(): Promise<[ReservoirResponse, ReservoirResponse]> {
-  return Promise.all([getReservoir('a'), getReservoir('b')])
+export function getReservoirs(): Promise<ReservoirsResponse> {
+  return request<ReservoirsResponse>(PATHS.reservoirs)
 }
 
 export function startTransfer(
-  from: number,
-  to: number,
+  from: ReservoirId,
+  to: ReservoirId,
   amount_percent: number,
-): Promise<StartTransferResponse> {
-  return request<StartTransferResponse>(PATHS.transfer, {
+): Promise<void> {
+  return request<void>(PATHS.transfer, {
     method: 'POST',
     body: JSON.stringify({ from, to, amount_percent }),
   })
-}
-
-export function getTransferStatus(id: string): Promise<TransferStatusResponse> {
-  return request<TransferStatusResponse>(PATHS.transferStatus(id))
-}
-
-// ─── WebSocket ────────────────────────────────────────────────────────────────
-export function createReservoirSocket(
-  onMessage: (data: ReservoirStreamMessage) => void,
-  onError?: (e: Event) => void,
-): WebSocket {
-  const ws = new WebSocket(`${WS_BASE}${PATHS.wsReservoirs}`)
-  ws.onmessage = (e: MessageEvent) => {
-    try {
-      onMessage(JSON.parse(e.data as string) as ReservoirStreamMessage)
-    } catch {
-      // malformed frame — ignore
-    }
-  }
-  if (onError) ws.onerror = onError
-  return ws
 }

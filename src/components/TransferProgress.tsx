@@ -12,7 +12,7 @@ export default function TransferProgress({ transfer }: Props) {
   const isComplete = transfer.status === 'complete'
 
   const barClass = isFailed ? 'bg-danger' : isComplete ? 'bg-success' : 'bg-primary progress-bar-striped progress-bar-animated'
-  const label = isFailed ? 'Transfer failed' : isComplete ? 'Transfer complete' : `Transferring… ${transfer.progressPercent}%`
+  const label = isFailed ? 'Transfer failed' : isComplete ? 'Transfer complete' : 'Transferring…'
   const icon = isFailed ? 'fa-circle-exclamation' : isComplete ? 'fa-circle-check' : 'fa-spinner fa-spin'
 
   return (
@@ -24,7 +24,7 @@ export default function TransferProgress({ transfer }: Props) {
       <div className="progress" style={{ height: 10 }}>
         <div
           className={`progress-bar ${barClass}`}
-          style={{ width: isRunning ? `${transfer.progressPercent}%` : '100%', transition: 'width 0.4s ease' }}
+          style={{ width: '100%', transition: 'width 0.4s ease' }}
         />
       </div>
     </div>

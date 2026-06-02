@@ -2,7 +2,6 @@ export type ReservoirId = 'a' | 'b'
 
 export interface ReservoirState {
   id: ReservoirId
-  apiId: number
   name: string
   level: number // 0–100
 }
@@ -14,5 +13,4 @@ export interface TransferState {
   from: ReservoirId | null
   to: ReservoirId | null
   targetPercent: number
-  progressPercent: number
 }
