@@ -34,8 +34,10 @@ const BASE = `http://${HOST}`
 const WS_BASE = `ws://${HOST}`
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  status: number
+  constructor(status: number, message: string) {
     super(message)
+    this.status = status
     this.name = 'ApiError'
   }
 }
