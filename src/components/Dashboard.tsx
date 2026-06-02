@@ -3,6 +3,7 @@ import ReservoirGauge from './ReservoirGauge'
 import TransferControls from './TransferControls'
 import TransferProgress from './TransferProgress'
 import StatusBanner from './StatusBanner'
+import { getReservoirs } from '../api'
 import type { ReservoirId, ReservoirState, TransferState } from '../types'
 
 const MOCK_ALERTS: { type: 'warning' | 'danger' | 'info'; message: string }[] = [
@@ -50,6 +51,23 @@ export default function Dashboard() {
     }, 200)
   }
 
+  const [testState, setTestState] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
+  const [testResult, setTestResult] = useState<string>('')
+
+  async function handleApiTest() {
+    setTestState('loading')
+    setTestResult('')
+    try {
+      const [a, b] = await getReservoirs()
+      setTestResult(JSON.stringify({ a, b }))
+      setTestState('ok')
+    } catch (err) {
+      setTestResult(err instanceof Error ? err.message : String(err))
+      setTestState('error')
+    }
+    setTimeout(() => { setTestState('idle'); setTestResult('') }, 5000)
+  }
+
   const [resA, resB] = reservoirs
   const activeFrom = transfer.from
 
@@ -69,10 +87,35 @@ export default function Dashboard() {
             RESERVOIR CONTROL
           </span>
         </div>
-        <span className="text-white-50" style={{ fontSize: '0.8rem' }}>
-          <i className="fas fa-circle text-success me-1" style={{ fontSize: '0.6rem' }} />
-          ONLINE
-        </span>
+        <div className="d-flex align-items-center gap-2">
+          {testResult && (
+            <span
+              className={`text-${testState === 'ok' ? 'success' : 'danger'}`}
+              style={{ fontSize: '0.75rem', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+              title={testResult}
+            >
+              {testResult}
+            </span>
+          )}
+          <button
+            className={`btn btn-sm ${testState === 'ok' ? 'btn-success' : testState === 'error' ? 'btn-danger' : 'btn-outline-secondary'}`}
+            style={{ fontSize: '0.75rem', padding: '2px 10px' }}
+            disabled={testState === 'loading'}
+            onClick={handleApiTest}
+          >
+            {testState === 'loading'
+              ? <><i className="fas fa-spinner fa-spin me-1" />Testing…</>
+              : testState === 'ok'
+              ? <><i className="fas fa-circle-check me-1" />OK</>
+              : testState === 'error'
+              ? <><i className="fas fa-circle-xmark me-1" />Failed</>
+              : 'Test API'}
+          </button>
+          <span className="text-white-50" style={{ fontSize: '0.8rem' }}>
+            <i className="fas fa-circle text-success me-1" style={{ fontSize: '0.6rem' }} />
+            ONLINE
+          </span>
+        </div>
       </div>
 
       {/* alerts */}
