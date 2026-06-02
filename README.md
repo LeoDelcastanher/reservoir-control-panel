@@ -47,8 +47,8 @@ Initiates a water transfer between reservoirs.
 **Request body**
 ```json
 {
-  "from": "a",
-  "to": "b",
+  "from": 1,
+  "to": 2,
   "amount_percent": 30
 }
 ```

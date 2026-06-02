@@ -63,8 +63,8 @@ export function getReservoirs(): Promise<[ReservoirResponse, ReservoirResponse]>
 }
 
 export function startTransfer(
-  from: ReservoirId,
-  to: ReservoirId,
+  from: number,
+  to: number,
   amount_percent: number,
 ): Promise<StartTransferResponse> {
   return request<StartTransferResponse>(PATHS.transfer, {

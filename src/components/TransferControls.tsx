@@ -4,14 +4,15 @@ import type { ReservoirId, TransferState } from '../types'
 interface Props {
   transfer: TransferState
   onTransfer: (from: ReservoirId, to: ReservoirId, percent: number) => void
+  disabled?: boolean
 }
 
-export default function TransferControls({ transfer, onTransfer }: Props) {
+export default function TransferControls({ transfer, onTransfer, disabled = false }: Props) {
   const [direction, setDirection] = useState<'a-to-b' | 'b-to-a'>('a-to-b')
   const [percent, setPercent] = useState(50)
   const [confirmAll, setConfirmAll] = useState(false)
 
-  const isLocked = transfer.status === 'in_progress'
+  const isLocked = disabled || transfer.status === 'in_progress'
   const from: ReservoirId = direction === 'a-to-b' ? 'a' : 'b'
   const to: ReservoirId = direction === 'a-to-b' ? 'b' : 'a'
 

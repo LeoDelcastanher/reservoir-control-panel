@@ -1,21 +1,20 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ReservoirGauge from './ReservoirGauge'
 import TransferControls from './TransferControls'
 import TransferProgress from './TransferProgress'
 import StatusBanner from './StatusBanner'
-import { getReservoirs } from '../api'
+import { getReservoirs, startTransfer, getTransferStatus } from '../api'
 import type { ReservoirId, ReservoirState, TransferState } from '../types'
 
-const MOCK_ALERTS: { type: 'warning' | 'danger' | 'info'; message: string }[] = [
-  // { type: 'warning', message: 'Reservoir B near full' },
-  // { type: 'danger', message: 'Sensor A offline' },
-]
+type Alert = { type: 'warning' | 'danger' | 'info'; message: string }
 
 export default function Dashboard() {
   const [reservoirs, setReservoirs] = useState<ReservoirState[]>([
-    { id: 'a', name: 'RESERVOIR A', level: 72 },
-    { id: 'b', name: 'RESERVOIR B', level: 35 },
+    { id: 'a', name: 'RESERVOIR A', level: 0 },
+    { id: 'b', name: 'RESERVOIR B', level: 0 },
   ])
+  const [loading, setLoading] = useState(true)
+  const [alerts, setAlerts] = useState<Alert[]>([])
 
   const [transfer, setTransfer] = useState<TransferState>({
     status: 'idle',
@@ -25,30 +24,66 @@ export default function Dashboard() {
     progressPercent: 0,
   })
 
-  function handleTransfer(from: ReservoirId, to: ReservoirId, percent: number) {
+  function loadReservoirs() {
+    return getReservoirs().then(([a, b]) => {
+      setReservoirs([
+        { id: 'a', apiId: a.id, name: a.name, level: a.volume },
+        { id: 'b', apiId: b.id, name: b.name, level: b.volume },
+      ])
+    })
+  }
+
+  useEffect(() => {
+    loadReservoirs()
+      .catch(err => {
+        setAlerts([{ type: 'danger', message: err instanceof Error ? err.message : 'Failed to load reservoir data' }])
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
+  const TRANSFER_RESET: TransferState = { status: 'idle', from: null, to: null, targetPercent: 0, progressPercent: 0 }
+
+  async function handleTransfer(from: ReservoirId, to: ReservoirId, percent: number) {
     setTransfer({ status: 'in_progress', from, to, targetPercent: percent, progressPercent: 0 })
 
-    // simulate progress (mock — replaced by real API in Phase 4)
-    let progress = 0
-    const interval = setInterval(() => {
-      progress += 10
-      setTransfer(t => ({ ...t, progressPercent: progress }))
+    const fromApiId = reservoirs.find(r => r.id === from)!.apiId
+    const toApiId = reservoirs.find(r => r.id === to)!.apiId
 
-      if (progress >= 100) {
-        clearInterval(interval)
-        setReservoirs(prev => {
-          const src = prev.find(r => r.id === from)!
-          const moved = (src.level * percent) / 100
-          return prev.map(r => {
-            if (r.id === from) return { ...r, level: Math.max(0, Math.round(r.level - moved)) }
-            if (r.id === to) return { ...r, level: Math.min(100, Math.round(r.level + moved)) }
-            return r
-          })
+    let transferId: string
+    try {
+      const res = await startTransfer(fromApiId, toApiId, percent)
+      transferId = res.transfer_id
+    } catch (err) {
+      setTransfer(t => ({ ...t, status: 'failed' }))
+      setAlerts(prev => [...prev, { type: 'danger', message: err instanceof Error ? err.message : 'Failed to start transfer' }])
+      setTimeout(() => setTransfer(TRANSFER_RESET), 2000)
+      return
+    }
+
+    const interval = setInterval(() => {
+      getTransferStatus(transferId)
+        .then(res => {
+          setTransfer(t => ({ ...t, progressPercent: res.transferred_percent }))
+
+          if (res.status === 'complete') {
+            clearInterval(interval)
+            setTransfer(t => ({ ...t, status: 'complete', progressPercent: 100 }))
+            loadReservoirs().catch(() => {})
+            setTimeout(() => setTransfer(TRANSFER_RESET), 2000)
+          } else if (res.status === 'failed') {
+            clearInterval(interval)
+            setTransfer(t => ({ ...t, status: 'failed' }))
+            setAlerts(prev => [...prev, { type: 'danger', message: 'Transfer failed' }])
+            setTimeout(() => setTransfer(TRANSFER_RESET), 2000)
+          }
         })
-        setTransfer(t => ({ ...t, status: 'complete' }))
-        setTimeout(() => setTransfer({ status: 'idle', from: null, to: null, targetPercent: 0, progressPercent: 0 }), 2000)
-      }
-    }, 200)
+        .catch(err => {
+          clearInterval(interval)
+          setTransfer(t => ({ ...t, status: 'failed' }))
+          setAlerts(prev => [...prev, { type: 'danger', message: err instanceof Error ? err.message : 'Transfer status check failed' }])
+          setTimeout(() => setTransfer(TRANSFER_RESET), 2000)
+        })
+    }, 500)
   }
 
   const [testState, setTestState] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
@@ -119,7 +154,7 @@ export default function Dashboard() {
       </div>
 
       {/* alerts */}
-      <StatusBanner alerts={MOCK_ALERTS} />
+      <StatusBanner alerts={alerts} />
 
       {/* main layout */}
       <div className="d-flex flex-grow-1" style={{ minHeight: 0 }}>
@@ -140,7 +175,7 @@ export default function Dashboard() {
 
         {/* transfer controls */}
         <div style={{ width: 280, padding: '12px 8px' }}>
-          <TransferControls transfer={transfer} onTransfer={handleTransfer} />
+          <TransferControls transfer={transfer} onTransfer={handleTransfer} disabled={loading} />
         </div>
 
         {/* divider */}

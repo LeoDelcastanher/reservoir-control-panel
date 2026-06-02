@@ -2,6 +2,7 @@ export type ReservoirId = 'a' | 'b'
 
 export interface ReservoirState {
   id: ReservoirId
+  apiId: number
   name: string
   level: number // 0–100
 }
